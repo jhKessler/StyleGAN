@@ -1,6 +1,8 @@
 import unittest
+import os
 import configure_pythonpath
 from args import Args
+import torch
 
 class TestArgs(unittest.TestCase):
 
@@ -28,6 +30,12 @@ class TestArgs(unittest.TestCase):
         self.assertGreater(Args.RESOLUTION, 0)
 
 
+    def test_num_progress_img(self):
+        # check resolution
+        self.assertIsInstance(Args.NUM_PROGRESS_IMGS, int)
+        self.assertGreater(Args.NUM_PROGRESS_IMGS, 0)
+
+
     def test_learning_rate(self):
         # check learning rate
         self.assertIsInstance(Args.LR, float)
@@ -37,7 +45,8 @@ class TestArgs(unittest.TestCase):
     def test_device(self):
         # check device
         self.assertIn(Args.DEVICE, ["cpu", "cuda"])
-        
+        if Args.DEVICE == "cuda":
+            self.assertTrue(torch.cuda.is_available())
 
     def test_data_path(self):
         # check data path
