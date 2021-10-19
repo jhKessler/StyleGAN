@@ -10,3 +10,5 @@ def train_model(Args):
     Args.DEVICE = torch.cuda.device(Args.DEVICE)
 
     model_dict = get_model_dict(Args)
+
+    
