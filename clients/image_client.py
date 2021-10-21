@@ -1,7 +1,6 @@
 import os
 import torch
 import numpy as np
-from torch.functional import norm
 import torchvision.utils as vutils
 import matplotlib.pyplot as plt
 

@@ -1,5 +1,5 @@
 import torch
-from checkpoint_utils import get_model_dict
+from clients.checkpoint_client import CheckpointClient
 
 def train_model(Args):
     """
@@ -9,6 +9,7 @@ def train_model(Args):
     torch.manual_seed(Args.SEED)
     Args.DEVICE = torch.cuda.device(Args.DEVICE)
 
-    model_dict = get_model_dict(Args)
+    checkpoint = CheckpointClient.get_checkpoint(Args)
+    model_dict = checkpoint.get_dict()
 
     

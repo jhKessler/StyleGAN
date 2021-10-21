@@ -2,7 +2,11 @@ import os
 import torch
 import torch.nn as nn
 import time
+
 from checkpoint import Checkpoint
+from models import Generator
+from models import Discriminator
+
 
 class CheckpointClient(object):
     """
@@ -58,10 +62,10 @@ class CheckpointClient(object):
                 # create default values for training
                 Args.MODEL_ID = CheckpointClient.create_model_id()
 
-                generator = torch.nn.Sequential(nn.Linear(2, 2)) # placeholder
+                generator = Generator() # placeholder
                 g_optimizer = torch.optim.Adam(generator.parameters(), Args.LR, Args.BETAS)
 
-                discriminator = torch.nn.Sequential(nn.Linear(2, 2)) # placeholder
+                discriminator = Discriminator() # placeholder
                 d_optimizer = torch.optim.Adam(discriminator.parameters(), Args.LR, Args.BETAS)
 
                 # set training progress data

@@ -2,3 +2,4 @@ data
 checkpoints
 __pycache__
 .vscode
+__init__.py
