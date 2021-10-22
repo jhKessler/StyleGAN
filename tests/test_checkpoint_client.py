@@ -1,7 +1,7 @@
 import unittest
 import os
 import configure_pythonpath
-from clients.checkpoint_client import CheckpointClient
+from clients import CheckpointClient
 from args import Args
 
 class TestCheckpointUtils(unittest.TestCase):

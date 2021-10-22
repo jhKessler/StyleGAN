@@ -17,7 +17,7 @@ class GenBlock(nn.Module):
 
         # add learned constant if first block
         if initial:
-            self.conv1 = BaseConstant(in_channels)
+            self.conv1 = BaseConstant(out_channels)
         # add upsample
         else:
             self.conv1 = nn.Sequential(
@@ -40,20 +40,25 @@ class GenBlock(nn.Module):
         # relu
         self.leaky2 = nn.LeakyReLU(0.1)
 
-    def forward(self, inp: tensor, style: tensor) -> tensor:
-        if not self.initial:
-            batch_size, _, x, y = inp.shape
-        else:
-            batch_size, x, y = inp, 4, 4
+    def forward(self, inp: tensor, style: tensor, device: torch.device) -> tensor:
+        """
+        GenBlock that takesinput from previous block and 2 noise vectors
+        """
+        batch_size, conv_block_num, noise_dim = style.shape
+        assert conv_block_num == 2, "GenBlock needs 2 noise vectors since it has 2 conv blocks"
 
+        # split styles
         style1, style2 = torch.split(style, 1, dim=1)
 
-        out = self.conv1(batch_size if self.initial else inp)
-        out = self.noise1(out, torch.randn(batch_size, 1, out.shape[2], out.shape[2]))
+        out = self.conv1(inp)
+        inp_noise = torch.randn(batch_size, 1, out.shape[2], out.shape[2]).to(device) # noise injection
+        out = self.noise1(out, inp_noise)
         out = self.ada1(out, style1)
         out = self.leaky1(out)
+
         out = self.conv2(out)
-        out = self.noise2(out, torch.randn(batch_size, 1, out.shape[2], out.shape[2]))
+        inp_noise = torch.randn(batch_size, 1, out.shape[2], out.shape[2]).to(device) # noise injection
+        out = self.noise2(out, inp_noise)
         out = self.ada2(out, style2)
         out = self.leaky2(out)
 

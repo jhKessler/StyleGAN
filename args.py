@@ -3,7 +3,7 @@ class Args(object):
 
     SEED = 42
     BATCH_SIZE = 32
-    NUM_PROGRESS_IMGS = 16
+    NUM_PROGRESS_IMGS = 64
     BETAS = [0.0, 0.99]
     MODEL_ID = None # set to none when making new checkpoint
     RESET_MODEL = False

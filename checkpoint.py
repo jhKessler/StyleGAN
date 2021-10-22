@@ -1,8 +1,5 @@
 import pickle
 
-from torch.autograd.grad_mode import F
-
-
 class Checkpoint(object):
     """
     class for stroring training progress

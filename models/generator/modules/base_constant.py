@@ -10,6 +10,7 @@ class BaseConstant(nn.Module):
         # learned constant
         self.base = nn.Parameter(torch.randn(1, n_channels, size, size))
 
-    def forward(self, batch_size: int) -> tensor:
+    def forward(self, inp: tensor) -> tensor:
         """Returns base constant for every noise batch element"""
+        batch_size = inp.shape[0]
         return self.base.repeat(batch_size, 1, 1, 1)

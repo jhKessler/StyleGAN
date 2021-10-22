@@ -62,10 +62,10 @@ class CheckpointClient(object):
                 # create default values for training
                 Args.MODEL_ID = CheckpointClient.create_model_id()
 
-                generator = Generator() # placeholder
+                generator = Generator(style_dim = Args.NOISE_DIM).to(Args.DEVICE)
                 g_optimizer = torch.optim.Adam(generator.parameters(), Args.LR, Args.BETAS)
 
-                discriminator = Discriminator() # placeholder
+                discriminator = Discriminator(bias = False).to(Args.DEVICE)
                 d_optimizer = torch.optim.Adam(discriminator.parameters(), Args.LR, Args.BETAS)
 
                 # set training progress data

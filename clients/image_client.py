@@ -11,12 +11,14 @@ class ImageClient(object):
     """
 
     @staticmethod
-    def make_image_noise(batch_size: int, noise_dim: int, device: torch.cuda.device) -> torch.tensor:
-        return torch.randn(batch_size, noise_dim).to(device)
+    def make_image_noise(batch_size: int, noise_dim: int, device: torch.device) -> torch.tensor:
+        gen_block_count = 5
+        conv_block_count = 2
+        return torch.randn(gen_block_count, batch_size, conv_block_count, noise_dim).to(device)
 
 
     @staticmethod
-    def save_progress_images(images: torch.tensor, model_id: int) -> None:
+    def save_progress_images(images: torch.tensor, model_id: int, n_iterations: int) -> None:
         """
         Save progress images for making gif after training 
         """
@@ -30,5 +32,11 @@ class ImageClient(object):
 
         # make image grid
         image_grid = np.transpose(vutils.make_grid(images, padding = 2, normalize = True), (1, 2, 0))
+        plt.figure(figsize=(8,8))
+        plt.axis("off")
+        plt.title("Training Progress")
+        plt.imshow(image_grid)
+        plt.savefig(os.path.join(folder_path, f"iteration_{n_iterations}.png"))
+        plt.close()
         
     

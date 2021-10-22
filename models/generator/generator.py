@@ -25,31 +25,18 @@ class Generator(nn.Module):
             GenBlock(in_channels=128, out_channels=64, bias=bias, style_dim=style_dim), # 64x64
         ])
 
-        self.to_rgb = nn.ModuleList([
-            nn.Conv2d(in_channels=256, out_channels=3, kernel_size=1, bias=bias),
-            nn.Conv2d(in_channels=256, out_channels=3, kernel_size=1, bias=bias),
-            nn.Conv2d(in_channels=256, out_channels=3, kernel_size=1, bias=bias),
-            nn.Conv2d(in_channels=128, out_channels=3, kernel_size=1, bias=bias),
-            nn.Conv2d(in_channels=64, out_channels=3, kernel_size=1, bias=bias),
-        ])
+        self.to_rgb = nn.Conv2d(in_channels=64, out_channels=3, kernel_size=1, bias=bias)
 
-    def forward(self, noise: tensor, alpha: float) -> tensor:
-        step, batch_size, conv_block_size, style_dim = noise.shape
-        assert style_dim == self.style_dim, "Style Dimension invalid"
+
+    def forward(self, noise: tensor, device: torch.device) -> tensor:
+        gen_block_count, batch_size, conv_block_count, style_dim = noise.shape
         
-        out = self.base(batch_size, self.mapping_network(noise[0]))
+        out = self.base(noise[0], self.mapping_network(noise[0]), device)
+        noise = noise[1:]
 
-        for i in range(0, step-1):
-            if alpha < 1 and i == step-2:
-                fade_image = self.to_rgb[i](out)
-                fade_image = F.interpolate(fade_image, scale_factor=2)
+        for i in range(gen_block_count-1):
+            style = self.mapping_network(noise[i])
+            out = self.layers[i](out, style, device)
 
-            style = self.mapping_network(noise[i+1])
-            out = self.layers[i](out, style)
-
-        out = self.to_rgb[step-1](out)
-
-        if alpha < 1 and step > 1:
-            out = (out * alpha) + (fade_image * (1 - alpha))
-            
+        out = self.to_rgb(out)   
         return out

@@ -1,5 +1,5 @@
 import torch
-from clients.checkpoint_client import CheckpointClient
+from clients import CheckpointClient, ImageClient
 
 def train_model(Args):
     """
@@ -7,9 +7,13 @@ def train_model(Args):
     """
     
     torch.manual_seed(Args.SEED)
-    Args.DEVICE = torch.cuda.device(Args.DEVICE)
+    Args.DEVICE = torch.device(Args.DEVICE)
 
     checkpoint = CheckpointClient.get_checkpoint(Args)
     model_dict = checkpoint.get_dict()
+    generator = model_dict["generator"]
+    noise = ImageClient.make_image_noise(1, Args.BATCH_SIZE, Args.NOISE_DIM, Args.DEVICE)
+
+
 
     

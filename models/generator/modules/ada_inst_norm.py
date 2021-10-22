@@ -13,10 +13,12 @@ class AdaptiveInstanceNormalization(nn.Module):
         self.style = nn.Linear(style_dim, in_channels*2)
 
         self.style.bias.data[:in_channels] = 1
-        self.style.bias.data[:in_channels] = 0
+        self.style.bias.data[in_channels:] = 0
+
 
     def forward(self, inp: tensor, style: tensor) -> tensor:
-        batch_size, _, style_dim = style.shape
+        style = style.squeeze()
+        batch_size, style_dim = style.shape
         
         style = self.style(style).reshape(batch_size, self.in_channels*2, 1, 1)
         gamma, beta = torch.split(style, self.in_channels, dim=1)
