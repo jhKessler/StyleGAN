@@ -51,7 +51,8 @@ class Checkpoint(object):
             "iteration",
             "samples",
             "start_time",
-            "preview_noise"
+            "preview_noise",
+            "alpha"
         ]
         for key in dict_keys:
             if key not in model_dict:
@@ -70,10 +71,13 @@ class Checkpoint(object):
         return self.model_dict
 
 
-    def save(self) -> None:
+    def save(self, new_dict = None) -> None:
         """
         Saves model dict to file
         """
+        if new_dict is not None and Checkpoint.valid_dict(new_dict):
+            self.model_dict = new_dict
+
         filepath = Checkpoint.get_filepath(self.model_dict["Args"])
 
         with open(filepath, "wb") as f:

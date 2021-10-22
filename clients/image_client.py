@@ -4,7 +4,6 @@ import numpy as np
 import torchvision.utils as vutils
 import matplotlib.pyplot as plt
 
-
 class ImageClient(object):
     """
     Client offering multiple image Operations e.g. generating and saving images with generator model 
@@ -38,5 +37,18 @@ class ImageClient(object):
         plt.imshow(image_grid)
         plt.savefig(os.path.join(folder_path, f"iteration_{n_iterations}.png"))
         plt.close()
+
+
+    def save_fid_images(images: torch.tensor):
+        images = images.detach().cpu()
+        image_folder = "fid_format_data/fake"
+        for i in range(images.shape[0]):
+            image = images[i]
+            vutils.save_image(image,
+                    os.path.join(image_folder, f"image{i}.jpg"),
+                    normalize=True,
+                    value_range=(-1, 1)
+                    )
+
         
     

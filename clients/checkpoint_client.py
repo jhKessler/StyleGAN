@@ -85,7 +85,8 @@ class CheckpointClient(object):
                     "iteration": iteration,
                     "samples": samples,
                     "start_time": start_time,
-                    "preview_noise": preview_noise
+                    "preview_noise": preview_noise,
+                    "alpha": 1
                 }
                 return Checkpoint.create(model_dict = model_dict)
 
