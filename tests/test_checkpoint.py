@@ -23,7 +23,8 @@ class TestCheckpoint(unittest.TestCase):
                 "iteration": 0,
                 "samples": 0,
                 "start_time": 0,
-                "preview_noise": 0
+                "preview_noise": 0,
+                "alpha": 0
             }
         return test_dict
     

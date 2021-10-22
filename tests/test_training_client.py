@@ -9,19 +9,19 @@ class TestTrainingClient(unittest.TestCase):
 
     def test_create_dataloader(self):
         batch_size, img_size = 32, 32
-        dataloader = TrainingClient.create_dataloader(batch_size, img_size, upscale = True)
+        dataloader = TrainingClient.create_dataloader(batch_size, img_size)
         batch = next(iter(dataloader))[0]
-        self.assertEquals(batch.shape, (32, 3, 64, 64))
+        self.assertEquals(batch.shape, (32, 3, img_size, img_size))
 
         img_size = 64
-        dataloader = TrainingClient.create_dataloader(batch_size, img_size, upscale = False)
+        dataloader = TrainingClient.create_dataloader(batch_size, img_size)
         batch = next(iter(dataloader))[0]
-        self.assertEquals(batch.shape, (32, 3, 64, 64))
+        self.assertEquals(batch.shape, (32, 3, img_size, img_size))
 
         img_size = 8
-        dataloader = TrainingClient.create_dataloader(batch_size, img_size, upscale = True)
+        dataloader = TrainingClient.create_dataloader(batch_size, img_size)
         batch = next(iter(dataloader))[0]
-        self.assertEquals(batch.shape, (32, 3, 16, 16))
+        self.assertEquals(batch.shape, (32, 3, img_size, img_size))
         
 
     def test_merge_images(self):

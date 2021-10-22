@@ -4,3 +4,4 @@ numpy
 matplotlib
 pytorch-fid
 Pillow
+tqdm

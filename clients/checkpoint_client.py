@@ -3,6 +3,7 @@ import torch
 import torch.nn as nn
 import time
 
+from . import ImageClient
 from checkpoint import Checkpoint
 from models import Generator
 from models import Discriminator
@@ -73,7 +74,7 @@ class CheckpointClient(object):
                 start_time = time.time()
 
                 # create preview noise for showing progress
-                preview_noise = torch.randn(Args.NUM_PROGRESS_IMGS, Args.NOISE_DIM).to(Args.DEVICE)
+                preview_noise = ImageClient.make_image_noise(Args.NUM_PROGRESS_IMGS, Args.NOISE_DIM, Args.DEVICE)
 
                 model_dict = {
                     "Args": Args,

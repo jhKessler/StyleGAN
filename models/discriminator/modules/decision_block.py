@@ -20,7 +20,6 @@ class DecisionBlock(nn.Module):
         out_std = torch.sqrt(inp.var(0, unbiased=False) + 1e-8)
         mean_std = out_std.mean()
         mean_std = mean_std.expand(inp.size(0), 1, 4, 4)
-        print(inp.shape, mean_std.shape)
         inp = torch.cat([inp, mean_std], 1)
 
         out = inp

@@ -13,15 +13,15 @@ class Discriminator(nn.Module):
         super().__init__()
 
         self.layers = nn.ModuleList([
-            DiscBlock(in_channels=64, out_channels=128, bias=bias),
             DiscBlock(in_channels=128, out_channels=128, bias=bias),
-            DiscBlock(in_channels=128, out_channels=256, bias=bias),
-            DiscBlock(in_channels=256, out_channels=256, bias=bias),
+            DiscBlock(in_channels=128, out_channels=128, bias=bias),
+            DiscBlock(in_channels=128, out_channels=128, bias=bias),
+            DiscBlock(in_channels=128, out_channels=128, bias=bias),
         ])
 
-        self.from_rgb = FromRGB(out_channels=64)
+        self.from_rgb = FromRGB(out_channels=128)
 
-        self.outp = DecisionBlock(in_channels=256)
+        self.outp = DecisionBlock(in_channels=128)
 
     def forward(self, inp: tensor) -> tensor:
         out = self.from_rgb(inp)

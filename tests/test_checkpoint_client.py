@@ -35,4 +35,4 @@ class TestCheckpointUtils(unittest.TestCase):
         new_checkpoint = CheckpointClient.get_checkpoint(Args)
         model_dict = new_checkpoint.get_dict()
         self.assertTrue(model_dict["step"] == model_dict["iteration"] == model_dict["samples"] == 0)
-        self.assertTrue(model_dict["preview_noise"].shape == (Args.NUM_PROGRESS_IMGS, Args.NOISE_DIM))
+        self.assertTrue(model_dict["preview_noise"].shape == (5, Args.NUM_PROGRESS_IMGS, 2, Args.NOISE_DIM))
