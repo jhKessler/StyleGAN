@@ -2,6 +2,8 @@ import os
 import torch
 import numpy as np
 import torchvision.utils as vutils
+from PIL import Image
+from tqdm import tqdm
 import matplotlib.pyplot as plt
 
 class ImageClient(object):
@@ -35,20 +37,31 @@ class ImageClient(object):
         plt.axis("off")
         plt.title("Training Progress")
         plt.imshow(image_grid)
-        plt.savefig(os.path.join(folder_path, f"iteration_{n_iterations}.png"))
+        plt.savefig(os.path.join(folder_path, f"sample_{n_iterations}.png"))
         plt.close()
 
+    @staticmethod
+    def save_fake_fid_images(images: torch.tensor):
+        fid_path = "fid_format_data/fake"
+        current_img_num = 0
 
-    def save_fid_images(images: torch.tensor):
-        images = images.detach().cpu()
-        image_folder = "fid_format_data/fake"
-        for i in range(images.shape[0]):
-            image = images[i]
-            vutils.save_image(image,
-                    os.path.join(image_folder, f"image{i}.jpg"),
-                    normalize=True,
-                    value_range=(-1, 1)
-                    )
+        for image_batch in images:
+            for image in image_batch:
+                current_img_num += 1
+                image_path = os.path.join(fid_path, f"{current_img_num}.png")
+                vutils.save_image(image, image_path, normalize = True)
+
+    @staticmethod
+    def save_real_fid_images(images: torch.tensor):
+        fid_path = "fid_format_data/real"
+        current_img_num = 0
+
+        for image_batch in images:
+            for image in image_batch:
+                current_img_num += 1
+                image_path = os.path.join(fid_path, f"{current_img_num}.png")
+                vutils.save_image(image, image_path, normalize = True)
+
 
         
     

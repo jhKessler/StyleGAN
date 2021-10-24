@@ -9,9 +9,9 @@ class Args(object):
     MODEL_ID = None # set to none when making new checkpoint
     RESET_MODEL = False
     NOISE_DIM = 256
-    FADE_SIZE = 1_200_000
+    FADE_SIZE = 100_000
     PHASE_SIZE = FADE_SIZE * 2
-    LR = 0.0002
+    LR = 0.0004
     DATA_PATH = "data"
     DEVICE = "cuda"
     RESOLUTION = 64

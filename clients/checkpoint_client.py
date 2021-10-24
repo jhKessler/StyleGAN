@@ -64,9 +64,11 @@ class CheckpointClient(object):
                 Args.MODEL_ID = CheckpointClient.create_model_id()
 
                 generator = Generator(style_dim = Args.NOISE_DIM).to(Args.DEVICE)
+                generator.apply(CheckpointClient.weights_init)
                 g_optimizer = torch.optim.Adam(generator.parameters(), Args.LR, Args.BETAS)
 
                 discriminator = Discriminator(bias = False).to(Args.DEVICE)
+                discriminator.apply(CheckpointClient.weights_init)
                 d_optimizer = torch.optim.Adam(discriminator.parameters(), Args.LR, Args.BETAS)
 
                 # set training progress data
@@ -97,3 +99,12 @@ class CheckpointClient(object):
         
         else:
             return Checkpoint.load(Args)
+
+
+    @staticmethod
+    def weights_init(layer):
+        
+        if type(layer) in [nn.Conv2d, nn.ConvTranspose2d]:
+            nn.init.kaiming_normal_(layer.weight)
+        if type(layer) == nn.Linear:
+            nn.init.xavier_normal_(layer.weight)

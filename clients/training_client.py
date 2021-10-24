@@ -17,7 +17,6 @@ class TrainingClient(object):
         """
         Creates dataloader that loads the images
         """
-        print("Creating Dataloader...")
         data_path = "data"
 
         data = dset.ImageFolder(
@@ -25,8 +24,7 @@ class TrainingClient(object):
             transform = transforms.Compose([
                 transforms.Resize((img_size, img_size)),
                 transforms.ToTensor(),
-                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5)),
-                transforms.RandomHorizontalFlip(p = 0.5)
+                transforms.Normalize((0.5, 0.5, 0.5), (0.5, 0.5, 0.5))
             ])
         )
         loader = DataLoader(data, batch_size, shuffle = True, num_workers = 3)
@@ -50,11 +48,9 @@ class TrainingClient(object):
     def calculate_FID_score():
         real_data = "fid_format_data/real"
         fake_data = "fid_format_data/fake"
-        print("Calculating FID Score...")
-        outp = subprocess.run(["python", "-m", "pytorch_fid", real_data, fake_data, "--batch-size", "128", "--device", "cuda:0"], capture_output=True, text=True).stdout
+        outp = subprocess.run(["python", "-m", "pytorch_fid", real_data, fake_data, "--batch-size", "100", "--device", "cuda:0"], capture_output=True, text=True).stdout
         outp = outp.split()[1].replace("\n", "")
-        print(f"FID Score: {outp}")
-        return float(outp)
+        return round(float(outp), 2)
 
 
     @staticmethod

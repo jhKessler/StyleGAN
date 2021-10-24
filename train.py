@@ -2,8 +2,10 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 from tqdm import tqdm
-from clients import CheckpointClient, ImageClient, TrainingClient
+from clients import CheckpointClient, ImageClient, TrainingClient, image_client
+from step_assert import StepAssert
 import utils
+import gc
 
 def train_model(Args):
 	"""
@@ -28,6 +30,7 @@ def train_model(Args):
 	step = model_dict["step"]
 	alpha = model_dict["alpha"]
 
+	step_assert = StepAssert(tolerance=3)
 	gen_parameter_count = utils.count_parameters(generator)
 	disc_parameter_count = utils.count_parameters(discriminator)
 
@@ -35,21 +38,33 @@ def train_model(Args):
 	print(f"Generator parameters: {utils.format_large_nums(gen_parameter_count)}")
 	print(f"Discriminator parameters: {utils.format_large_nums(disc_parameter_count)}")
 
-	
+	last_FID_score = 0
+
 	for step in range(step, Args.MAX_STEPS):
+
 		img_size = utils.get_resolution(step)
 		data = TrainingClient.create_dataloader(Args.BATCH_SIZE, img_size)
 		loader = iter(data)
-		
-		pbar = tqdm(total = Args.PHASE_SIZE)
+		alpha_samples = 0
+
+		pbar = tqdm()
 		pbar.update(samples)
-		pbar.set_description(f"Resolution: {img_size}x{img_size} | Samples: {samples} | Alpha: {alpha}")
+		pbar.set_description(f"Resolution: {img_size}x{img_size} | Samples: {samples} | Alpha: {alpha} | FID: {last_FID_score}")
 		
 		g_loss_list = []
 		d_loss_list = []
 		d_real_output_list = []
 		d_fake_output_list = []
-		for iteration in range(iteration, Args.PHASE_SIZE):
+
+		real_fid_images = []
+		fid_loader = iter(TrainingClient.create_dataloader(100, img_size))
+		for i in range(10):
+			fid_images = TrainingClient.merge_images(next(fid_loader)[0], alpha = 1)
+			real_fid_images.append(fid_images)
+		ImageClient.save_real_fid_images(real_fid_images)
+		
+
+		for iteration in range(iteration, 1_000_000):
 			try:
 				image_batch = next(loader)[0]
 			except StopIteration:
@@ -57,8 +72,7 @@ def train_model(Args):
 				image_batch = next(loader)[0]
 
 			image_batch = image_batch.float().to(Args.DEVICE)
-
-			alpha = max([1, round(samples / Args.FADE_SIZE, 2)]) if step != 0 else 1
+			alpha = max([1, round(alpha_samples / Args.FADE_SIZE, 2)]) if step != 0 else 1
 
 			image_batch = TrainingClient.merge_images(image_batch, alpha)
 
@@ -76,21 +90,21 @@ def train_model(Args):
 			fake_prediction = discriminator(generated_images).mean()
 			d_fake_output_list.append(fake_prediction.item())
 
-			
 			grad_penalty = TrainingClient.gradient_penalty(
 				discriminator, 
 				image_batch, 
 				generated_images,
 				Args.DEVICE
 			)
-
-			disc_loss = F.softplus(-real_prediction + fake_prediction) + (grad_penalty * 10)
-			disc_loss = F.softplus(disc_loss)
+			
+			disc_loss = F.softplus(-(real_prediction.mean() - fake_prediction.mean()) + (grad_penalty * 10))
 			d_loss_list.append(disc_loss.item())
 			discriminator.zero_grad()
 			disc_loss.backward(retain_graph = True)
 			d_optim.step()
-						
+
+			utils.toggle_grad(discriminator, False)
+			utils.toggle_grad(generator, True)	
 			gen_predict = discriminator(generated_images).mean()
 			gen_loss = -gen_predict
 			g_loss_list.append(gen_loss.item())
@@ -99,10 +113,28 @@ def train_model(Args):
 			g_optim.step()
 
 			samples += current_batch_size
+			alpha_samples += current_batch_size
 			pbar.update(current_batch_size)
-			pbar.set_description(f"Resolution: {img_size}x{img_size} | Samples: {samples} | Alpha: {alpha}")
+			pbar.set_description(f"Resolution: {img_size}x{img_size} | Samples: {samples} | Alpha: {alpha} | FID: {last_FID_score} | tolerance: {step_assert.get_tolerance()}")
 			
-			if samples % 5_000 < current_batch_size:
+			if samples % 10_000 < current_batch_size:
+				
+				with torch.no_grad():
+					generated_images = generator(preview_noise, Args.DEVICE)
+				ImageClient.save_progress_images(generated_images.detach().cpu(), Args.MODEL_ID, samples)
+				del generated_images
+
+				# calculate fid
+				fake_fid_images = []
+				with torch.no_grad():
+					for i in range(10):
+						noise = ImageClient.make_image_noise(100, Args.NOISE_DIM, Args.DEVICE)
+						fake_fid_images.append(generator(noise, Args.DEVICE).detach().cpu())
+				ImageClient.save_fake_fid_images(fake_fid_images)
+				del fake_fid_images
+				gc.collect()
+				last_FID_score = TrainingClient.calculate_FID_score()
+
 				avg_real_output = np.array(d_real_output_list).mean().round(2)
 				d_real_output_list = []
 
@@ -116,9 +148,14 @@ def train_model(Args):
 				g_loss_list = []
 
 				print(f"{avg_real_output=}, {avg_fake_output=}, {avg_d_loss=}, {avg_gen_loss=}")
-				generator_noise = ImageClient.make_image_noise(Args.NUM_PROGRESS_IMGS, Args.NOISE_DIM, Args.DEVICE)
-				generated_images = generator(generator_noise, Args.DEVICE)
-				ImageClient.save_progress_images(generated_images, Args.MODEL_ID, samples)
+
+				gc.collect()
+				torch.cuda.empty_cache()
+
+				if alpha == 1 and (samples >= Args.PHASE_SIZE or not step_assert(last_FID_score)):
+					print("Going to next Step...")
+					step_assert.reset()
+					break
 	
 	
 	

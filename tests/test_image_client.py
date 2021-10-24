@@ -23,3 +23,5 @@ class TestImageClient(unittest.TestCase):
         folder_files = os.listdir("intermediate_images/model_1")
         self.assertIn("iteration_-1.png", folder_files)
         os.remove("intermediate_images/model_1/iteration_-1.png")
+
+        
