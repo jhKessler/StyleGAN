@@ -16,3 +16,4 @@ def toggle_grad(model, mode):
     """turn gradient of model on/off"""
     for p in model.parameters():
         p.requires_grad = mode
+

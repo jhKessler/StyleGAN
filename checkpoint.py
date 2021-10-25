@@ -12,6 +12,7 @@ class Checkpoint(object):
         """
         return f"checkpoints/model_{Args.MODEL_ID}.pkl"
 
+
     @staticmethod
     def create(model_dict: dict):
         """
@@ -33,7 +34,7 @@ class Checkpoint(object):
         with open(filepath, "rb") as f:
             model_dict = pickle.load(f)
         # create checkpoint object
-        Checkpoint.create(model_dict)
+        return Checkpoint.create(model_dict)
 
 
     @staticmethod

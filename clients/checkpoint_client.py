@@ -55,13 +55,11 @@ class CheckpointClient(object):
         """
 
         # create new model if model id is None
-        if Args.MODEL_ID is None:
-
-            if Args.RESET_MODEL:
-                raise RuntimeError("Cannot reset model if Model id is not specified")
-            else:
+        if Args.MODEL_ID is None and Args.RESET_MODEL:
+            raise RuntimeError("Cannot reset model if Model id is not specified")
+        elif Args.MODEL_ID or Args.RESET_MODEL:
                 # create default values for training
-                Args.MODEL_ID = CheckpointClient.create_model_id()
+                Args.MODEL_ID = CheckpointClient.create_model_id() if Args.MODEL_ID is None else Args.MODEL_ID
 
                 generator = Generator(style_dim = Args.NOISE_DIM).to(Args.DEVICE)
                 generator.apply(CheckpointClient.weights_init)
@@ -92,7 +90,6 @@ class CheckpointClient(object):
                     "alpha": 1
                 }
                 return Checkpoint.create(model_dict = model_dict)
-
 
         elif not CheckpointClient.id_is_valid(Args.MODEL_ID):
             raise ValueError("Model id does not exist, set model id to None when creating new model")

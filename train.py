@@ -2,7 +2,7 @@ import torch
 import torch.nn.functional as F
 import numpy as np
 from tqdm import tqdm
-from clients import CheckpointClient, ImageClient, TrainingClient, image_client
+from clients import CheckpointClient, ImageClient, TrainingClient
 from step_assert import StepAssert
 import utils
 import gc
@@ -18,6 +18,7 @@ def train_model(Args):
 	checkpoint = CheckpointClient.get_checkpoint(Args)
 	model_dict = checkpoint.get_dict()
 
+	Args = model_dict["Args"]
 
 	generator = model_dict["generator"]
 	g_optim = model_dict["g_optimizer"]
@@ -25,16 +26,15 @@ def train_model(Args):
 	d_optim = model_dict["d_optimizer"]
 	preview_noise = model_dict["preview_noise"]
 
-	iteration = model_dict["iteration"]
 	samples = model_dict["samples"]
 	step = model_dict["step"]
 	alpha = model_dict["alpha"]
 
-	step_assert = StepAssert(tolerance=3)
+	step_assert = StepAssert(tolerance=4)
 	gen_parameter_count = utils.count_parameters(generator)
 	disc_parameter_count = utils.count_parameters(discriminator)
 
-	print(f"Starting Training for Model {Args.MODEL_ID} with resolution {utils.get_resolution(step)}x{utils.get_resolution(step)} and {samples} used.")
+	print(f"Starting Training for Model {Args.MODEL_ID} with resolution {utils.get_resolution(step)}x{utils.get_resolution(step)} and {samples} samples used.")
 	print(f"Generator parameters: {utils.format_large_nums(gen_parameter_count)}")
 	print(f"Discriminator parameters: {utils.format_large_nums(disc_parameter_count)}")
 
@@ -64,7 +64,7 @@ def train_model(Args):
 		ImageClient.save_real_fid_images(real_fid_images)
 		
 
-		for iteration in range(iteration, 1_000_000):
+		for iteration in range(1_000_000):
 			try:
 				image_batch = next(loader)[0]
 			except StopIteration:
@@ -72,7 +72,7 @@ def train_model(Args):
 				image_batch = next(loader)[0]
 
 			image_batch = image_batch.float().to(Args.DEVICE)
-			alpha = max([1, round(alpha_samples / Args.FADE_SIZE, 2)]) if step != 0 else 1
+			alpha = min([1, round(alpha_samples / Args.FADE_SIZE, 2)]) if step != 0 else 1
 
 			image_batch = TrainingClient.merge_images(image_batch, alpha)
 
@@ -97,7 +97,7 @@ def train_model(Args):
 				Args.DEVICE
 			)
 			
-			disc_loss = F.softplus(-(real_prediction.mean() - fake_prediction.mean()) + (grad_penalty * 10))
+			disc_loss = -(real_prediction.mean() - fake_prediction.mean()) + (grad_penalty * 10)
 			d_loss_list.append(disc_loss.item())
 			discriminator.zero_grad()
 			disc_loss.backward(retain_graph = True)
@@ -115,21 +115,21 @@ def train_model(Args):
 			samples += current_batch_size
 			alpha_samples += current_batch_size
 			pbar.update(current_batch_size)
-			pbar.set_description(f"Resolution: {img_size}x{img_size} | Samples: {samples} | Alpha: {alpha} | FID: {last_FID_score} | tolerance: {step_assert.get_tolerance()}")
+			pbar.set_description(f"Resolution: {img_size}x{img_size} | Samples: {utils.format_large_nums(samples)} | Alpha: {alpha} | FID: {last_FID_score} | tolerance: {step_assert.get_tolerance()}")
 			
-			if samples % 10_000 < current_batch_size:
+			if samples % 20_000 < current_batch_size:
 				
 				with torch.no_grad():
 					generated_images = generator(preview_noise, Args.DEVICE)
-				ImageClient.save_progress_images(generated_images.detach().cpu(), Args.MODEL_ID, samples)
+				ImageClient.save_progress_images(generated_images, Args.MODEL_ID, samples)
 				del generated_images
-
+				torch.cuda.empty_cache()
 				# calculate fid
 				fake_fid_images = []
 				with torch.no_grad():
 					for i in range(10):
 						noise = ImageClient.make_image_noise(100, Args.NOISE_DIM, Args.DEVICE)
-						fake_fid_images.append(generator(noise, Args.DEVICE).detach().cpu())
+						fake_fid_images.append(generator(noise, Args.DEVICE).cpu())
 				ImageClient.save_fake_fid_images(fake_fid_images)
 				del fake_fid_images
 				gc.collect()
@@ -147,20 +147,24 @@ def train_model(Args):
 				avg_gen_loss = np.array(g_loss_list).mean().round(2)
 				g_loss_list = []
 
-				print(f"{avg_real_output=}, {avg_fake_output=}, {avg_d_loss=}, {avg_gen_loss=}")
+				print(f" {avg_real_output=}, {avg_fake_output=}, {avg_d_loss=}, {avg_gen_loss=}")
 
 				gc.collect()
 				torch.cuda.empty_cache()
 
-				if alpha == 1 and (samples >= Args.PHASE_SIZE or not step_assert(last_FID_score)):
+				if alpha == 1 and (alpha_samples >= Args.PHASE_SIZE or not step_assert(last_FID_score)):
 					print("Going to next Step...")
 					step_assert.reset()
+
+					# save checkpoint
+					model_dict["generator"] = generator
+					model_dict["g_optimizer"] = g_optim
+					model_dict["discriminator"] = discriminator
+					model_dict["d_optimizer"] = d_optim
+
+					model_dict["samples"] = samples
+					model_dict["step"] = step
+
+					checkpoint.save(new_dict = model_dict)
 					break
-	
-	
-	
 
-
-
-
-	

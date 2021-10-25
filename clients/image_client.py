@@ -24,7 +24,7 @@ class ImageClient(object):
         Save progress images for making gif after training 
         """
         # decouple images
-        images = images.detach().cpu()
+        images = images.cpu()
 
         # create image folder if not already existing
         folder_path = os.path.join("intermediate_images", f"model_{model_id}")
@@ -32,13 +32,15 @@ class ImageClient(object):
             os.makedirs(folder_path)
 
         # make image grid
-        image_grid = np.transpose(vutils.make_grid(images, padding = 2, normalize = True), (1, 2, 0))
+        image_grid = np.transpose(vutils.make_grid(images, padding = 2, normalize = True, scale_each=True), (1, 2, 0))
         plt.figure(figsize=(8,8))
         plt.axis("off")
         plt.title("Training Progress")
         plt.imshow(image_grid)
         plt.savefig(os.path.join(folder_path, f"sample_{n_iterations}.png"))
         plt.close()
+
+        
 
     @staticmethod
     def save_fake_fid_images(images: torch.tensor):
