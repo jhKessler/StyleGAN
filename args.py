@@ -7,11 +7,11 @@ class Args(object):
     NUM_PROGRESS_IMGS = 64
     BETAS = [0.0, 0.99]
     MODEL_ID = 1 # set to none when making new checkpoint
-    RESET_MODEL = True
+    RESET_MODEL = False
     NOISE_DIM = 256
-    FADE_SIZE = 150_000
+    FADE_SIZE = 50_000
     PHASE_SIZE = FADE_SIZE * 3
-    LR = 0.0001
+    LR = [0.0004, 0.0002, 0.0001, 0.0001, 0.0001]
     DATA_PATH = "data"
     DEVICE = "cuda"
     RESOLUTION = 64

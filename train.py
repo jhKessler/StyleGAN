@@ -30,7 +30,7 @@ def train_model(Args):
 	step = model_dict["step"]
 	alpha = model_dict["alpha"]
 
-	step_assert = StepAssert(tolerance=4)
+	step_assert = StepAssert(tolerance=3)
 	gen_parameter_count = utils.count_parameters(generator)
 	disc_parameter_count = utils.count_parameters(discriminator)
 
@@ -41,6 +41,22 @@ def train_model(Args):
 	last_FID_score = 0
 
 	for step in range(step, Args.MAX_STEPS):
+
+		best_FID_score = None
+
+		if step != 0:
+			print("Loading Best Checkpoint...")
+			checkpoint = CheckpointClient.get_checkpoint(Args)
+			model_dict = checkpoint.get_dict()
+			generator = model_dict["generator"]
+			g_optim = model_dict["g_optimizer"]
+			discriminator = model_dict["discriminator"]
+			d_optim = model_dict["d_optimizer"]
+			preview_noise = model_dict["preview_noise"]
+			samples = model_dict["samples"]
+
+		utils.adjust_lr(d_optim, Args.LR[step])
+		utils.adjust_lr(g_optim, Args.LR[step])
 
 		img_size = utils.get_resolution(step)
 		data = TrainingClient.create_dataloader(Args.BATCH_SIZE, img_size)
@@ -97,7 +113,7 @@ def train_model(Args):
 				Args.DEVICE
 			)
 			
-			disc_loss = -(real_prediction.mean() - fake_prediction.mean()) + (grad_penalty * 10)
+			disc_loss = F.softplus(-(real_prediction.mean() - fake_prediction.mean()) + (grad_penalty * 10))
 			d_loss_list.append(disc_loss.item())
 			discriminator.zero_grad()
 			disc_loss.backward(retain_graph = True)
@@ -115,9 +131,9 @@ def train_model(Args):
 			samples += current_batch_size
 			alpha_samples += current_batch_size
 			pbar.update(current_batch_size)
-			pbar.set_description(f"Resolution: {img_size}x{img_size} | Samples: {utils.format_large_nums(samples)} | Alpha: {alpha} | FID: {last_FID_score} | tolerance: {step_assert.get_tolerance()}")
+			pbar.set_description(f"Resolution: {img_size}x{img_size} | Samples: {utils.format_large_nums(samples)} | Alpha: {alpha} | FID: {best_FID_score} | tolerance: {step_assert.get_tolerance()}, Learning Rate: {Args.LR[step]}")
 			
-			if samples % 20_000 < current_batch_size:
+			if samples % 10_000 < current_batch_size:
 				
 				with torch.no_grad():
 					generated_images = generator(preview_noise, Args.DEVICE)
@@ -126,6 +142,7 @@ def train_model(Args):
 				torch.cuda.empty_cache()
 				# calculate fid
 				fake_fid_images = []
+
 				with torch.no_grad():
 					for i in range(10):
 						noise = ImageClient.make_image_noise(100, Args.NOISE_DIM, Args.DEVICE)
@@ -133,7 +150,22 @@ def train_model(Args):
 				ImageClient.save_fake_fid_images(fake_fid_images)
 				del fake_fid_images
 				gc.collect()
-				last_FID_score = TrainingClient.calculate_FID_score()
+				new_FID_score = TrainingClient.calculate_FID_score()
+				
+				if best_FID_score is None or new_FID_score < best_FID_score:
+					print("Saving best Model...")
+					# save checkpoint
+					model_dict["generator"] = generator
+					model_dict["g_optimizer"] = g_optim
+					model_dict["discriminator"] = discriminator
+					model_dict["d_optimizer"] = d_optim
+
+					model_dict["samples"] = samples
+					model_dict["step"] = step
+
+					checkpoint.save(new_dict = model_dict)
+
+					best_FID_score = new_FID_score
 
 				avg_real_output = np.array(d_real_output_list).mean().round(2)
 				d_real_output_list = []
@@ -152,19 +184,8 @@ def train_model(Args):
 				gc.collect()
 				torch.cuda.empty_cache()
 
-				if alpha == 1 and (alpha_samples >= Args.PHASE_SIZE or not step_assert(last_FID_score)):
+				if alpha == 1 and (alpha_samples >= Args.PHASE_SIZE or not step_assert(new_FID_score)):
 					print("Going to next Step...")
-					step_assert.reset()
-
-					# save checkpoint
-					model_dict["generator"] = generator
-					model_dict["g_optimizer"] = g_optim
-					model_dict["discriminator"] = discriminator
-					model_dict["d_optimizer"] = d_optim
-
-					model_dict["samples"] = samples
-					model_dict["step"] = step
-
-					checkpoint.save(new_dict = model_dict)
+					step_assert.reset()					
 					break
 

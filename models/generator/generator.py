@@ -16,10 +16,10 @@ class Generator(nn.Module):
         self.style_dim = style_dim
         self.mapping_network = MappingNetwork(n_layer=8, layer_perceptrons=style_dim)
 
-        self.base = GenBlock(in_channels=128, out_channels=128, bias=bias, initial=True, style_dim=style_dim) # 4x4
+        self.base = GenBlock(in_channels=256, out_channels=256, bias=bias, initial=True, style_dim=style_dim) # 4x4
 
         self.layers = nn.ModuleList([
-            GenBlock(in_channels=128, out_channels=128, bias=bias, style_dim=style_dim), # 8x8
+            GenBlock(in_channels=256, out_channels=128, bias=bias, style_dim=style_dim), # 8x8
             GenBlock(in_channels=128, out_channels=128, bias=bias, style_dim=style_dim), # 16x16
             GenBlock(in_channels=128, out_channels=128, bias=bias, style_dim=style_dim), # 32x32
             GenBlock(in_channels=128, out_channels=128, bias=bias, style_dim=style_dim), # 64x64

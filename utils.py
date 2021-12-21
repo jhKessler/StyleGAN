@@ -17,3 +17,8 @@ def toggle_grad(model, mode):
     for p in model.parameters():
         p.requires_grad = mode
 
+def adjust_lr(optimizer, lr):
+    """adjust learning rate of optimizer"""
+    for group in optimizer.param_groups:
+        group['lr'] = lr
+

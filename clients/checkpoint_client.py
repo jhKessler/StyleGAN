@@ -57,21 +57,23 @@ class CheckpointClient(object):
         # create new model if model id is None
         if Args.MODEL_ID is None and Args.RESET_MODEL:
             raise RuntimeError("Cannot reset model if Model id is not specified")
-        elif Args.MODEL_ID or Args.RESET_MODEL:
+        elif Args.MODEL_ID is None or Args.RESET_MODEL:
                 # create default values for training
                 Args.MODEL_ID = CheckpointClient.create_model_id() if Args.MODEL_ID is None else Args.MODEL_ID
 
-                generator = Generator(style_dim = Args.NOISE_DIM).to(Args.DEVICE)
-                generator.apply(CheckpointClient.weights_init)
-                g_optimizer = torch.optim.Adam(generator.parameters(), Args.LR, Args.BETAS)
-
-                discriminator = Discriminator(bias = False).to(Args.DEVICE)
-                discriminator.apply(CheckpointClient.weights_init)
-                d_optimizer = torch.optim.Adam(discriminator.parameters(), Args.LR, Args.BETAS)
+                
 
                 # set training progress data
                 step = iteration = samples = 0
                 start_time = time.time()
+
+                generator = Generator(style_dim = Args.NOISE_DIM).to(Args.DEVICE)
+                generator.apply(CheckpointClient.weights_init)
+                g_optimizer = torch.optim.Adam(generator.parameters(), Args.LR[step], Args.BETAS)
+
+                discriminator = Discriminator(bias = False).to(Args.DEVICE)
+                discriminator.apply(CheckpointClient.weights_init)
+                d_optimizer = torch.optim.Adam(discriminator.parameters(), Args.LR[step], Args.BETAS)
 
                 # create preview noise for showing progress
                 preview_noise = ImageClient.make_image_noise(Args.NUM_PROGRESS_IMGS, Args.NOISE_DIM, Args.DEVICE)

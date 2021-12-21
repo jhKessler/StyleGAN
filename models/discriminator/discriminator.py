@@ -16,12 +16,12 @@ class Discriminator(nn.Module):
             DiscBlock(in_channels=128, out_channels=128, bias=bias),
             DiscBlock(in_channels=128, out_channels=128, bias=bias),
             DiscBlock(in_channels=128, out_channels=128, bias=bias),
-            DiscBlock(in_channels=128, out_channels=128, bias=bias),
+            DiscBlock(in_channels=128, out_channels=256, bias=bias),
         ])
 
         self.from_rgb = FromRGB(out_channels=128)
 
-        self.outp = DecisionBlock(in_channels=128)
+        self.outp = DecisionBlock(in_channels=256)
 
     def forward(self, inp: tensor) -> tensor:
         out = self.from_rgb(inp)

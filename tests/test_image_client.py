@@ -21,7 +21,7 @@ class TestImageClient(unittest.TestCase):
     def test_save_progress_images(self):
         ImageClient.save_progress_images(images = torch.randn(64, 3, 64, 64), model_id = 1, n_iterations = -1)
         folder_files = os.listdir("intermediate_images/model_1")
-        self.assertIn("iteration_-1.png", folder_files)
-        os.remove("intermediate_images/model_1/iteration_-1.png")
+        self.assertIn("sample_-1.png", folder_files)
+        os.remove("intermediate_images/model_1/sample_-1.png")
 
         

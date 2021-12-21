@@ -38,8 +38,8 @@ class TestArgs(unittest.TestCase):
 
     def test_learning_rate(self):
         # check learning rate
-        self.assertIsInstance(Args.LR, float)
-        self.assertGreater(Args.LR, 0)
+        self.assertIsInstance(Args.LR, list)
+        self.assertEquals(len(Args.LR), Args.MAX_STEPS-1)
 
 
     def test_device(self):
