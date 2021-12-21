@@ -2,6 +2,5 @@ data
 checkpoints
 __pycache__
 .vscode
-__init__.py
 intermediate_images
 fid_format_data

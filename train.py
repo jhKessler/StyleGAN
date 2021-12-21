@@ -187,5 +187,4 @@ def train_model(Args):
 				if alpha == 1 and (alpha_samples >= Args.PHASE_SIZE or not step_assert(new_FID_score)):
 					print("Going to next Step...")
 					step_assert.reset()					
-					break
-
+					
