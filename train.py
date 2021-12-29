@@ -76,7 +76,7 @@ def train_model(Args):
 		fid_loader = iter(TrainingClient.create_dataloader(100, img_size))
 		for i in range(10):
 			fid_images = TrainingClient.merge_images(next(fid_loader)[0], alpha = 1)
-			real_fid_images.append(fid_images)
+			real_fid_images.append(fid_images.detach().cpu()
 		ImageClient.save_real_fid_images(real_fid_images)
 		
 
